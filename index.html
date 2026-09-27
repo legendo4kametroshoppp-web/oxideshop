@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>OXIDE — поповнення</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#08080a;
+    --panel:rgba(255,255,255,0.045);
+    --panel-hover:rgba(255,255,255,0.075);
+    --line:rgba(255,255,255,0.09);
+    --rust:#c2481f;
+    --rust-2:#e8621f;
+    --ember:#ff8a3d;
+    --bronze:#e0ab5c;
+    --ink:#f3ede4;
+    --ink-dim:#948b83;
+    --ok:#7bd18f;
+    --err:#e26a6a;
+  }
+  *{box-sizing:border-box;}
+  html{scroll-padding-top:70px;scroll-behavior:smooth;}
+  body{
+    margin:0;font-family:'Inter',sans-serif;background:var(--bg);color:var(--ink);
+    padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+    overflow-x:hidden;
+  }
+  h1,h2,h3{font-family:'Rajdhani',sans-serif;font-weight:700;margin:0;}
+
+  /* ---------- ambient glow ---------- */
+  .glow{position:fixed;border-radius:50%;filter:blur(90px);z-index:0;pointer-events:none;opacity:.35;}
+  .glow-1{width:520px;height:520px;top:-180px;left:-120px;background:var(--rust);animation:drift1 22s ease-in-out infinite;}
+  .glow-2{width:460px;height:460px;top:20%;right:-160px;background:var(--rust-2);animation:drift2 26s ease-in-out infinite;}
+  .glow-3{width:380px;height:380px;bottom:-140px;left:30%;background:var(--ember);opacity:.2;animation:drift1 30s ease-in-out infinite reverse;}
+  @keyframes drift1{0%,100%{transform:translate(0,0);}50%{transform:translate(60px,40px);}}
+  @keyframes drift2{0%,100%{transform:translate(0,0);}50%{transform:translate(-50px,60px);}}
+  @media (prefers-reduced-motion: reduce){ .glow{animation:none;} }
+
+  /* ---------- nav ---------- */
+  nav{
+    position:sticky;top:0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 28px;padding-top:calc(16px + env(safe-area-inset-top,0px));
+    background:rgba(8,8,10,0.7);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+    border-bottom:1px solid var(--line);
+  }
+  .brand{display:flex;align-items:center;gap:10px;font-family:'Rajdhani',sans-serif;font-weight:700;font-size:1.2em;letter-spacing:.5px;}
+  .brand svg{width:30px;height:30px;}
+  .nav-links{display:flex;gap:22px;align-items:center;}
+  .nav-links a{color:var(--ink-dim);text-decoration:none;font-size:.92em;font-weight:500;transition:color .15s;}
+  .nav-links a:hover{color:var(--ink);}
+  .currency-toggle{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;}
+  .currency-toggle button{
+    background:transparent;border:none;color:var(--ink-dim);padding:7px 16px;cursor:pointer;
+    font:600 .85em 'Inter',sans-serif;transition:.15s;
+  }
+  .currency-toggle button.active{background:var(--rust);color:#fff;}
+
+  /* ---------- hero ---------- */
+  .hero{
+    position:relative;z-index:1;max-width:900px;margin:0 auto;text-align:center;
+    padding:90px 24px 50px;
+  }
+  .trust-badge{
+    display:inline-flex;align-items:center;gap:7px;
+    border:1px solid var(--line);background:var(--panel);
+    border-radius:20px;padding:6px 16px;font-size:.8em;color:var(--ink-dim);margin-bottom:26px;
+  }
+  .trust-badge b{color:var(--ember);font-weight:600;}
+  .hero h1{font-size:clamp(2.2em,6vw,3.4em);line-height:1.05;margin-bottom:16px;}
+  .hero h1 span{background:linear-gradient(90deg,var(--rust-2),var(--ember));-webkit-background-clip:text;background-clip:text;color:transparent;}
+  .hero p{color:var(--ink-dim);font-size:1.08em;max-width:52ch;margin:0 auto;}
+
+  /* ---------- grid ---------- */
+  .grid{
+    position:relative;z-index:1;max-width:1180px;margin:0 auto;padding:30px 24px 20px;
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:18px;
+  }
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;
+    padding:24px;display:flex;flex-direction:column;position:relative;
+    backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+    opacity:0;transform:translateY(16px);
+    transition:opacity .5s ease, transform .5s ease, border-color .2s, box-shadow .2s, background .2s;
+  }
+  .card.in{opacity:1;transform:translateY(0);}
+  .card:hover{
+    border-color:rgba(232,98,31,0.5);background:var(--panel-hover);
+    box-shadow:0 0 0 1px rgba(232,98,31,0.15), 0 18px 40px -20px rgba(232,98,31,0.4);
+  }
+  .tier-row{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;}
+  .bonus-tag{font:600 .78em 'Inter',sans-serif;color:var(--ember);border:1px solid rgba(255,138,61,0.35);border-radius:20px;padding:3px 10px;white-space:nowrap;}
+  .ingot-row{display:flex;align-items:flex-end;gap:3px;height:34px;margin-bottom:12px;}
+  .amount{font-size:1.6em;color:var(--ink);margin-bottom:2px;}
+  .bonus-desc{color:var(--ink-dim);font-size:.85em;line-height:1.5;margin:0 0 20px;}
+  .price-row{margin-top:auto;display:flex;gap:10px;}
+  .price{flex:1;border:1px solid var(--line);background:rgba(0,0,0,0.3);color:var(--bronze);font:700 1.15em 'Rajdhani',sans-serif;letter-spacing:.3px;display:flex;align-items:center;justify-content:center;border-radius:9px;}
+  .buy-btn{width:48px;flex:0 0 48px;border:none;border-radius:9px;background:var(--rust);color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,transform .15s,box-shadow .15s;}
+  .buy-btn:hover{background:var(--rust-2);transform:scale(1.06);box-shadow:0 6px 20px -4px rgba(232,98,31,0.6);}
+  .buy-btn svg{width:20px;height:20px;}
+
+  /* ---------- support ---------- */
+  .support{
+    position:relative;z-index:1;max-width:1180px;margin:20px auto 70px;padding:36px 32px;
+    border:1px solid var(--line);border-radius:16px;background:var(--panel);backdrop-filter:blur(6px);
+    display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  }
+  .support h2{margin:0 0 4px;font-size:1.3em;}
+  .support p{margin:0;color:var(--ink-dim);font-size:.92em;}
+  .ghost-btn{background:transparent;border:1px solid var(--line);color:var(--ink);padding:11px 24px;border-radius:9px;cursor:pointer;font:600 .95em 'Inter',sans-serif;transition:.15s;}
+  .ghost-btn:hover{border-color:var(--rust-2);color:var(--ember);background:rgba(232,98,31,0.08);}
+
+  footer{position:relative;z-index:1;text-align:center;color:#5a5650;font-size:.8em;padding:0 20px 34px;}
+  footer .foot-links{display:flex;gap:16px;justify-content:center;margin-bottom:10px;flex-wrap:wrap;}
+  footer .foot-links a{color:var(--ink-dim);text-decoration:none;}
+  footer .foot-links a:hover{color:var(--ink);}
+
+  /* ---------- modal ---------- */
+  .overlay{position:fixed;inset:0;background:rgba(4,4,5,0.85);display:none;align-items:center;justify-content:center;z-index:100;padding:16px;backdrop-filter:blur(3px);}
+  .overlay.show{display:flex;}
+  .modal{
+    background:#131114;border:1px solid var(--line);border-radius:16px;max-width:420px;width:100%;padding:28px;position:relative;
+    box-shadow:0 30px 80px -30px rgba(0,0,0,0.7);
+    animation:pop .25s ease;
+  }
+  @keyframes pop{from{opacity:0;transform:scale(.96);}to{opacity:1;transform:scale(1);}}
+  .modal .close{position:absolute;top:16px;right:18px;cursor:pointer;color:var(--ink-dim);background:none;border:none;font-size:1.3em;line-height:1;}
+  .modal .close:hover{color:var(--ink);}
+  .modal h2{margin:0 0 4px;font-size:1.4em;}
+  .modal .sub{color:var(--ink-dim);font-size:.88em;margin-bottom:6px;}
+  .modal label{display:block;margin:16px 0 6px;color:var(--ink-dim);font-size:.85em;}
+  .modal input,.modal textarea{width:100%;padding:11px 13px;border-radius:8px;border:1px solid var(--line);background:#0c0b0d;color:var(--ink);font:400 .98em 'Inter',sans-serif;}
+  .modal input:focus,.modal textarea:focus{outline:2px solid var(--rust-2);outline-offset:1px;}
+  .card-number{margin-top:8px;border:1px dashed var(--line);border-radius:9px;padding:13px;text-align:center;font:700 1.1em 'Rajdhani',sans-serif;letter-spacing:1.5px;color:var(--bronze);cursor:pointer;background:#0c0b0d;}
+  .card-number small{display:block;font:400 .68em 'Inter',sans-serif;color:var(--ink-dim);letter-spacing:0;margin-top:5px;}
+  .order-total{margin-top:16px;text-align:center;font-size:1em;color:var(--ink-dim);}
+  .order-total b{color:var(--bronze);font-family:'Rajdhani',sans-serif;font-size:1.2em;}
+  .primary-btn{width:100%;margin-top:18px;padding:13px;border:none;border-radius:9px;background:var(--rust);color:#fff;font:600 .98em 'Inter',sans-serif;cursor:pointer;transition:background .15s,box-shadow .15s;}
+  .primary-btn:hover:not(:disabled){background:var(--rust-2);box-shadow:0 8px 24px -8px rgba(232,98,31,0.55);}
+  .primary-btn:disabled{opacity:.45;cursor:not-allowed;}
+  .status-msg{margin-top:14px;padding:12px 14px;border-radius:9px;font-size:.88em;line-height:1.45;}
+  .status-msg.ok{background:rgba(123,209,143,0.1);color:var(--ok);border:1px solid rgba(123,209,143,0.3);}
+  .status-msg.err{background:rgba(226,106,106,0.1);color:var(--err);border:1px solid rgba(226,106,106,0.3);}
+
+  /* ---------- live chat widget ---------- */
+  .chat-bubble{
+    position:fixed;right:22px;bottom:22px;z-index:90;
+    width:56px;height:56px;border-radius:50%;border:none;cursor:pointer;
+    background:var(--rust);color:#fff;display:flex;align-items:center;justify-content:center;
+    box-shadow:0 10px 30px -8px rgba(232,98,31,0.6);
+    transition:transform .15s,background .15s;
+  }
+  .chat-bubble:hover{background:var(--rust-2);transform:scale(1.06);}
+  .chat-bubble svg{width:24px;height:24px;}
+  .chat-bubble .unread{
+    position:absolute;top:-3px;right:-3px;width:16px;height:16px;border-radius:50%;
+    background:var(--ember);border:2px solid var(--bg);display:none;
+  }
+  .chat-bubble .unread.show{display:block;}
+
+  .chat-panel{
+    position:fixed;right:22px;bottom:90px;z-index:90;
+    width:320px;max-width:calc(100vw - 44px);height:420px;max-height:calc(100vh - 140px);
+    background:#131114;border:1px solid var(--line);border-radius:16px;
+    display:none;flex-direction:column;overflow:hidden;
+    box-shadow:0 30px 80px -30px rgba(0,0,0,0.7);
+  }
+  .chat-panel.open{display:flex;}
+  .chat-head{
+    padding:14px 16px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;justify-content:space-between;
+    background:rgba(255,255,255,0.03);
+  }
+  .chat-head div{font:600 .92em 'Inter',sans-serif;}
+  .chat-head small{display:block;color:var(--ink-dim);font-size:.75em;font-weight:400;margin-top:1px;}
+  .chat-head button{background:none;border:none;color:var(--ink-dim);cursor:pointer;font-size:1.1em;}
+  .chat-body{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:8px;}
+  .chat-msg-row{display:flex;flex-direction:column;gap:3px;max-width:85%;}
+  .chat-msg-row.me{align-self:flex-end;align-items:flex-end;}
+  .chat-msg-row.incoming{align-self:flex-start;align-items:flex-start;}
+  .chat-sender{display:flex;align-items:center;gap:6px;font-size:.72em;color:var(--ink-dim);}
+  .chat-avatar{
+    width:20px;height:20px;border-radius:50%;object-fit:cover;
+    background:var(--rust);display:flex;align-items:center;justify-content:center;
+    font-size:.6em;color:#fff;font-weight:700;flex:0 0 auto;
+  }
+  .chat-msg{padding:9px 12px;border-radius:12px;font-size:.86em;line-height:1.4;}
+  .chat-msg.me{background:var(--rust);color:#fff;border-bottom-right-radius:3px;}
+  .chat-msg.incoming{background:rgba(255,255,255,0.07);color:var(--ink);border-bottom-left-radius:3px;}
+  .chat-msg.sys{align-self:center;background:none;color:var(--ink-dim);font-size:.78em;text-align:center;max-width:100%;}
+  .chat-chips{display:flex;flex-direction:column;gap:6px;margin-top:6px;align-self:flex-start;max-width:100%;}
+  .chat-chip{
+    text-align:left;background:rgba(255,255,255,0.06);border:1px solid var(--line);color:var(--ink);
+    padding:8px 12px;border-radius:9px;cursor:pointer;font:400 .84em 'Inter',sans-serif;transition:.15s;
+  }
+  .chat-chip:hover{border-color:var(--rust-2);background:rgba(232,98,31,0.1);}
+  .chat-input-row{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line);}
+  .chat-input-row input{
+    flex:1;padding:10px 12px;border-radius:9px;border:1px solid var(--line);
+    background:#0c0b0d;color:var(--ink);font:400 .9em 'Inter',sans-serif;
+  }
+  .chat-input-row input:focus{outline:2px solid var(--rust-2);outline-offset:1px;}
+  .chat-input-row button{
+    border:none;border-radius:9px;background:var(--rust);color:#fff;padding:0 16px;cursor:pointer;
+    transition:background .15s;
+  }
+  .chat-input-row button:hover{background:var(--rust-2);}
+  .chat-input-row button:disabled{opacity:.45;cursor:not-allowed;}
+
+  @media(max-width:640px){
+    .nav-links{display:none;}
+    .chat-panel{right:12px;bottom:82px;width:calc(100vw - 24px);}
+    .chat-bubble{right:16px;bottom:16px;}
+  }
+</style>
+</head>
+<body>
+
+<div class="glow glow-1"></div>
+<div class="glow glow-2"></div>
+<div class="glow glow-3"></div>
+
+<svg width="0" height="0" style="position:absolute">
+  <symbol id="ingot" viewBox="0 0 28 20">
+    <path d="M4 2 H24 L27 18 H1 Z" fill="var(--bronze)" stroke="#4a3a20" stroke-width="1"/>
+    <path d="M4 2 H24 L25.3 8 H2.7 Z" fill="var(--rust-2)" opacity=".55"/>
+  </symbol>
+  <symbol id="cart" viewBox="0 0 24 24">
+    <path d="M3 4h2l2.2 11.2A2 2 0 0 0 9.15 17H18a2 2 0 0 0 1.95-1.57L21.5 8H6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="9.5" cy="20.5" r="1.3" fill="currentColor"/>
+    <circle cx="17.5" cy="20.5" r="1.3" fill="currentColor"/>
+  </symbol>
+  <symbol id="mark" viewBox="0 0 84 84">
+    <circle cx="42" cy="42" r="40" stroke="var(--line)" stroke-width="1.5" fill="none"/>
+    <circle cx="42" cy="42" r="27" fill="url(#rustSpot)"/>
+    <path d="M42 15 L44 27 M67 30 L55 36 M67 54 L55 48 M42 69 L44 57 M17 54 L29 48 M17 30 L29 36" stroke="var(--bronze)" stroke-width="1.4" stroke-linecap="round"/>
+    <circle cx="42" cy="42" r="8" fill="#08080a" stroke="var(--bronze)" stroke-width="1.4"/>
+    <defs><radialGradient id="rustSpot" cx="38%" cy="34%" r="75%"><stop offset="0%" stop-color="var(--rust-2)"/><stop offset="100%" stop-color="var(--rust)"/></radialGradient></defs>
+  </symbol>
+</svg>
+
+<nav>
+  <div class="brand"><svg><use href="#mark"/></svg>OXIDE</div>
+  <div class="nav-links">
+    <a href="#catalog">Каталог</a>
+    <a href="#support-anchor" onclick="openSupport();return false;">Підтримка</a>
+    <div class="currency-toggle">
+      <button id="btn-uah" class="active" onclick="setCurrency('UAH')">₴ UAH</button>
+      <button id="btn-usd" onclick="setCurrency('USD')">$ USD</button>
+    </div>
+  </div>
+</nav>
+
+<section class="hero" id="catalog">
+  <div class="trust-badge">🛡 <b>Безпечна оплата</b> · перевірка вручну 24/7</div>
+  <h1>Поповнення <span>OXIDE Coins</span></h1>
+  <p>Миттєва заявка на нарахування ігрової валюти. Оплата на картку, підтвердження — напряму від адміністратора.</p>
+</section>
+
+<div class="grid" id="grid"></div>
+
+<section class="support">
+  <div>
+    <h2>Потрібна допомога?</h2>
+    <p>Якщо оплата не пройшла або монети не нараховано — напишіть нам, розберемось.</p>
+  </div>
+  <button class="ghost-btn" onclick="openSupport()">Звернутись у підтримку</button>
+</section>
+
+<footer>
+  <div class="foot-links"><a href="#">Угода користувача</a><a href="#">Конфіденційність</a></div>
+  © 2026 OXIDE COINS · замовлення обробляються командою вручну
+</footer>
+
+<!-- Purchase modal -->
+<div class="overlay" id="overlay">
+  <div class="modal">
+    <button class="close" onclick="closeModal()" aria-label="Закрити">✕</button>
+    <h2 id="modal-title">—</h2>
+    <div class="sub" id="modal-desc"></div>
+
+    <label>HYPERHUG ID</label>
+    <input type="text" id="hyperhug-id" placeholder="Наприклад: 123456789">
+
+    <label>Telegram (щоб ми могли з вами зв'язатись)</label>
+    <input type="text" id="order-username" placeholder="@username">
+
+    <label>Реквізити для оплати</label>
+    <div class="card-number" onclick="copyCard()" title="Натисніть, щоб скопіювати">
+      5375 4112 3456 7890
+      <small>Натисніть, щоб скопіювати номер картки</small>
+    </div>
+
+    <div class="order-total">До сплати <b id="modal-price">—</b></div>
+
+    <button class="primary-btn" id="paid-btn" onclick="submitOrder()">Я оплатив</button>
+    <div id="order-status"></div>
+  </div>
+</div>
+
+<!-- Support modal -->
+<div class="overlay" id="support-overlay">
+  <div class="modal">
+    <button class="close" onclick="closeSupport()" aria-label="Закрити">✕</button>
+    <h2>Підтримка</h2>
+    <div class="sub">Опишіть проблему — відповімо у Telegram.</div>
+    <label>Ваш Telegram username</label>
+    <input type="text" id="support-username" placeholder="@username">
+    <label>Опис проблеми</label>
+    <textarea id="support-text" rows="4" placeholder="Що сталося?"></textarea>
+    <button class="primary-btn" id="support-send" onclick="submitSupport()">Надіслати</button>
+    <div id="support-status"></div>
+  </div>
+</div>
+
+<!-- Live chat widget -->
+<button class="chat-bubble" id="chat-bubble" onclick="toggleChat()" aria-label="Відкрити чат підтримки">
+  <svg viewBox="0 0 24 24" fill="none"><path d="M4 5h16a1 1 0 0 1 1 1v9a1 1 0 0 1-1 1H9l-4 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+  <span class="unread" id="chat-unread"></span>
+</button>
+
+<div class="chat-panel" id="chat-panel">
+  <div class="chat-head">
+    <div>Чат з підтримкою<small id="chat-code-label">Код розмови: —</small></div>
+    <button onclick="toggleChat()" aria-label="Закрити">✕</button>
+  </div>
+  <div class="chat-body" id="chat-body"></div>
+  <div class="chat-input-row">
+    <input type="text" id="chat-input" placeholder="Напишіть повідомлення..." onkeydown="if(event.key==='Enter')sendChatMessage()">
+    <button id="chat-send" onclick="sendChatMessage()">➤</button>
+  </div>
+</div>
+
+<script>
+/* ===================== НАЛАШТУВАННЯ ===================== */
+const BOT_TOKEN = "8800815457:AAHvzZdgwoLmvK-IMqlWNnUz9X-b0Vz5J6I"; // онови токен — старий уже засвічений
+const ADMIN_CHAT_ID = "6601285474";
+const CARD_NUMBER = "5375 4112 3456 7890"; // заміни на свою картку
+
+const packages = [
+  {coins:50,  bonus:5,    usd:1.99},
+  {coins:125, bonus:20,   usd:4.99},
+  {coins:250, bonus:65,   usd:9.99},
+  {coins:500, bonus:175,  usd:19.99},
+  {coins:1250,bonus:500,  usd:49.99},
+  {coins:2500,bonus:1250, usd:99.99},
+  {coins:7500,bonus:3750, usd:299.99},
+];
+const USD_TO_UAH = 45;
+const MARKUP_UAH = 20;
+const POLL_INTERVAL_MS = 3000;
+const POLL_TIMEOUT_MS = 10 * 60 * 1000;
+
+let currency = "UAH";
+let selectedPackage = null;
+let pollHandle = null;
+
+function calcPrices(pkg){
+  const totalCoins = pkg.coins + pkg.bonus;
+  const bonusPercent = Math.round((pkg.bonus/pkg.coins)*100);
+  const uah = Math.ceil(pkg.usd * USD_TO_UAH) + MARKUP_UAH;
+  const usd = +(pkg.usd + (MARKUP_UAH/USD_TO_UAH)).toFixed(2);
+  return {totalCoins, bonusPercent, uah, usd};
+}
+
+function ingotIcons(idx){
+  const n = idx + 1;
+  let html = "";
+  for(let i=0;i<n;i++){
+    const h = 14 + i*3;
+    html += `<svg width="20" height="${h}" viewBox="0 0 28 20" style="height:${h}px"><use href="#ingot"/></svg>`;
+  }
+  return html;
+}
+
+function render(){
+  const grid = document.getElementById('grid');
+  grid.innerHTML = "";
+  packages.forEach((pkg, idx)=>{
+    const {totalCoins, bonusPercent, uah, usd} = calcPrices(pkg);
+    const priceLabel = currency === "UAH" ? `${uah} ₴` : `$${usd}`;
+    const card = document.createElement('div');
+    card.className = "card";
+    card.innerHTML = `
+      <div class="tier-row">
+        <div class="amount">${totalCoins} coins</div>
+        <div class="bonus-tag">+${bonusPercent}%</div>
+      </div>
+      <div class="ingot-row">${ingotIcons(idx)}</div>
+      <p class="bonus-desc">${pkg.coins} базових + ${pkg.bonus} бонусних монет веб-магазину</p>
+      <div class="price-row">
+        <div class="price">${priceLabel}</div>
+        <button class="buy-btn" onclick="openModal(${idx})" aria-label="Купити"><svg><use href="#cart"/></svg></button>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+  revealCards();
+}
+
+function revealCards(){
+  const cards = document.querySelectorAll('.card');
+  const io = new IntersectionObserver((entries)=>{
+    entries.forEach((e,i)=>{
+      if(e.isIntersecting){
+        setTimeout(()=>e.target.classList.add('in'), i*60);
+        io.unobserve(e.target);
+      }
+    });
+  }, {threshold:.15});
+  cards.forEach(c=>io.observe(c));
+}
+
+function setCurrency(c){
+  currency = c;
+  document.getElementById('btn-uah').classList.toggle('active', c==='UAH');
+  document.getElementById('btn-usd').classList.toggle('active', c==='USD');
+  render();
+}
+
+function openModal(idx){
+  selectedPackage = packages[idx];
+  const {totalCoins, uah, usd} = calcPrices(selectedPackage);
+  document.getElementById('modal-title').textContent = `${totalCoins} coins`;
+  document.getElementById('modal-desc').textContent =
+    `${selectedPackage.coins} + ${selectedPackage.bonus} бонусних монет веб-магазину`;
+  document.getElementById('modal-price').textContent =
+    currency === "UAH" ? `${uah} ₴` : `$${usd}`;
+  document.getElementById('hyperhug-id').value = "";
+  document.getElementById('order-username').value = "";
+  document.getElementById('order-status').innerHTML = "";
+  document.getElementById('paid-btn').disabled = false;
+  document.getElementById('paid-btn').textContent = "Я оплатив";
+  document.getElementById('overlay').classList.add('show');
+}
+function closeModal(){
+  document.getElementById('overlay').classList.remove('show');
+  stopPolling();
+}
+function stopPolling(){
+  if(pollHandle){ clearInterval(pollHandle); pollHandle = null; }
+}
+
+function copyCard(){
+  navigator.clipboard.writeText(CARD_NUMBER.replace(/\s/g,'')).then(()=>{
+    const box = document.querySelector('.card-number');
+    const old = box.innerHTML;
+    box.innerHTML = "Скопійовано";
+    setTimeout(()=>{box.innerHTML = old;}, 1200);
+  });
+}
+
+function tg(method, params){
+  const qs = params ? "?" + new URLSearchParams(params).toString() : "";
+  return fetch(`https://api.telegram.org/bot${BOT_TOKEN}/${method}${qs}`)
+    .then(r => r.json());
+}
+
+async function sendToTelegram(text){
+  const res = await fetch(`https://api.telegram.org/bot${BOT_TOKEN}/sendMessage`, {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body: JSON.stringify({chat_id: ADMIN_CHAT_ID, text})
+  });
+  if(!res.ok) throw new Error("Telegram API error: " + res.status);
+  return res.json();
+}
+
+async function submitOrder(){
+  const id = document.getElementById('hyperhug-id').value.trim();
+  const username = document.getElementById('order-username').value.trim();
+  const statusEl = document.getElementById('order-status');
+  if(!id || !username){
+    statusEl.innerHTML = `<div class="status-msg err">Заповніть HYPERHUG ID і Telegram username</div>`;
+    return;
+  }
+  const {totalCoins, uah, usd} = calcPrices(selectedPackage);
+  const priceLabel = currency === "UAH" ? `${uah} ₴` : `$${usd}`;
+  const btn = document.getElementById('paid-btn');
+  btn.disabled = true;
+  btn.textContent = "Надсилаємо...";
+  stopPolling();
+
+  const msg =
+`НОВЕ ЗАМОВЛЕННЯ
+Пакет: ${totalCoins} coins (${selectedPackage.coins}+${selectedPackage.bonus})
+Сума: ${priceLabel}
+HYPERHUG ID: ${id}
+Telegram: ${username}
+
+Підтвердіть — напишіть у відповідь "так" (оплата отримана) або "ні" (оплати немає).`;
+
+  try{
+    const baseline = await tg('getUpdates', { offset: -1 });
+    let offset = 0;
+    if(baseline.ok && baseline.result.length){
+      offset = baseline.result[baseline.result.length - 1].update_id + 1;
+    }
+
+    await sendToTelegram(msg);
+    statusEl.innerHTML = `<div class="status-msg ok">Заявку надіслано. Очікуємо підтвердження оплати...</div>`;
+    btn.textContent = "Очікуємо підтвердження...";
+
+    const deadline = Date.now() + POLL_TIMEOUT_MS;
+    pollHandle = setInterval(async () => {
+      if(Date.now() > deadline){
+        stopPolling();
+        statusEl.innerHTML = `<div class="status-msg err">Час очікування вичерпано. Напишіть у підтримку, якщо оплата все ж пройшла.</div>`;
+        btn.disabled = false;
+        btn.textContent = "Я оплатив";
+        return;
+      }
+      try{
+        const res = await tg('getUpdates', { offset, timeout: 0 });
+        if(!res.ok || !res.result.length) return;
+        for(const upd of res.result){
+          offset = upd.update_id + 1;
+          const m = upd.message;
+          if(!m || !m.text) continue;
+          if(String(m.chat.id) !== String(ADMIN_CHAT_ID)) continue;
+          const answer = m.text.trim().toLowerCase();
+          if(answer === "так" || answer === "yes"){
+            stopPolling();
+            statusEl.innerHTML = `<div class="status-msg ok">Оплату підтверджено! Монети будуть нараховані найближчим часом.</div>`;
+            btn.textContent = "Оплату підтверджено";
+            return;
+          } else if(answer === "ні" || answer === "no"){
+            stopPolling();
+            statusEl.innerHTML = `<div class="status-msg err">Оплату не отримано. Перевірте переказ або зверніться у підтримку.</div>`;
+            btn.disabled = false;
+            btn.textContent = "Я оплатив";
+            return;
+          }
+        }
+      }catch(e){}
+    }, POLL_INTERVAL_MS);
+
+  }catch(e){
+    statusEl.innerHTML = `<div class="status-msg err">Не вдалося надіслати замовлення. Спробуйте ще раз або скористайтесь підтримкою.</div>`;
+    btn.disabled = false;
+    btn.textContent = "Я оплатив";
+  }
+}
+
+/* ===================== ЖИВИЙ ЧАТ ===================== */
+const CHAT_POLL_INTERVAL_MS = 3000;
+const CHAT_IDLE_TIMEOUT_MS = 20 * 60 * 1000; // зупиняємо опитування, якщо 20 хв тиша
+
+const BOT_NAME = "OXIDE Bot";
+const ADMIN_NAME = "Legendo4ka";
+const ADMIN_AVATAR_SRC = "avatar.png"; // поклади файл аватарки поруч з цим html
+
+const PROBLEM_CATEGORIES = [
+  {label:"Оплата не зарахована", reply:"Дякуємо за звернення! Перевірте, будь ласка, чи гроші дійсно списались (виписка/чек банку). Нарахування зазвичай відбувається протягом 15 хвилин після підтвердженої оплати."},
+  {label:"Монети не з'явились у грі", reply:"Спробуйте, будь ласка, перезайти в акаунт — відображення балансу іноді оновлюється із затримкою. Якщо монет все ще немає — адміністратор перевірить вручну."},
+  {label:"Питання по HYPERHUG ID", reply:"Вкажіть, будь ласка, свій HYPERHUG ID і опишіть проблему — адміністратор перевірить дані вручну."},
+  {label:"Інше питання", reply:"Опишіть, будь ласка, детальніше вашу ситуацію — адміністратор відповість тут найближчим часом."}
+];
+
+let chatCode = null;
+let chatOffset = 0;
+let chatPollHandle = null;
+let chatDeadline = 0;
+let chatOpened = false;
+let chatStarted = false;
+
+function genChatCode(){
+  return "R" + Math.floor(1000 + Math.random()*9000);
+}
+
+function toggleChat(){
+  const panel = document.getElementById('chat-panel');
+  const isOpen = panel.classList.toggle('open');
+  if(isOpen){
+    chatOpened = true;
+    document.getElementById('chat-unread').classList.remove('show');
+    if(!chatStarted){
+      chatStarted = true;
+      chatCode = genChatCode();
+      document.getElementById('chat-code-label').textContent = `Код розмови: ${chatCode}`;
+      addBotMsg("Привіт! Оберіть, будь ласка, тему звернення:", true);
+    }
+    document.getElementById('chat-input').focus();
+  }
+}
+
+function avatarHtml(kind){
+  if(kind === "admin"){
+    return `<img class="chat-avatar" src="${ADMIN_AVATAR_SRC}" onerror="this.outerHTML='<div class=\\'chat-avatar\\'>${ADMIN_NAME[0]}</div>'">`;
+  }
+  return `<div class="chat-avatar">🤖</div>`;
+}
+
+function addChatRow(kind, name, text, chipsHtml){
+  const body = document.getElementById('chat-body');
+  const row = document.createElement('div');
+  const isMe = kind === "me";
+  row.className = "chat-msg-row " + (isMe ? "me" : "incoming");
+  row.innerHTML = `
+    ${isMe ? "" : `<div class="chat-sender">${avatarHtml(kind)}<span>${name}</span></div>`}
+    <div class="chat-msg ${isMe ? "me" : "incoming"}">${text}</div>
+    ${chipsHtml || ""}
+  `;
+  body.appendChild(row);
+  body.scrollTop = body.scrollHeight;
+}
+
+function addBotMsg(text, withCategories){
+  let chips = "";
+  if(withCategories){
+    chips = `<div class="chat-chips">` +
+      PROBLEM_CATEGORIES.map((c,i)=>`<button class="chat-chip" onclick="pickCategory(${i})">${c.label}</button>`).join("") +
+      `</div>`;
+  }
+  addChatRow("bot", BOT_NAME, text, chips);
+}
+
+function addAdminMsg(text){
+  addChatRow("admin", ADMIN_NAME, text);
+}
+
+function addSysMsg(text){
+  const body = document.getElementById('chat-body');
+  const div = document.createElement('div');
+  div.className = "chat-msg sys";
+  div.textContent = text;
+  body.appendChild(div);
+  body.scrollTop = body.scrollHeight;
+}
+
+function addChatMsg(kind, text){
+  // залишено для сумісності: 'me' — повідомлення користувача, 'sys' — службове
+  if(kind === "sys"){ addSysMsg(text); return; }
+  addChatRow("me", "", text);
+}
+
+async function pickCategory(i){
+  const cat = PROBLEM_CATEGORIES[i];
+  // ховаємо чіпси, щоб не тиснули двічі
+  document.querySelectorAll('.chat-chips').forEach(el=>el.remove());
+  addChatRow("me", "", cat.label);
+  addBotMsg(cat.reply);
+  addBotMsg("Передаю ваш запит адміністратору. Можете одразу написати деталі нижче — відповість тут, у чаті.");
+
+  ensurePolling();
+  try{
+    await sendToTelegram(`💬 ЧАТ [${chatCode}]\nТема: ${cat.label}\n\n(Відповідайте, починаючи з "${chatCode}:")`);
+  }catch(e){
+    addSysMsg("Не вдалося передати запит адміністратору. Спробуйте написати повідомлення текстом.");
+  }
+}
+
+async function ensurePolling(){
+  if(chatPollHandle) return;
+  const baseline = await tg('getUpdates', { offset: -1 });
+  chatOffset = (baseline.ok && baseline.result.length)
+    ? baseline.result[baseline.result.length - 1].update_id + 1
+    : 0;
+  startChatPolling();
+}
+
+async function sendChatMessage(){
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if(!text) return;
+  const btn = document.getElementById('chat-send');
+
+  if(!chatCode){
+    chatCode = genChatCode();
+    document.getElementById('chat-code-label').textContent = `Код розмови: ${chatCode}`;
+  }
+
+  addChatRow("me", "", text);
+  input.value = "";
+  btn.disabled = true;
+
+  try{
+    await ensurePolling();
+    await sendToTelegram(`💬 ЧАТ [${chatCode}]\n${text}\n\n(Відповідайте, починаючи з "${chatCode}:")`);
+  }catch(e){
+    addSysMsg("Не вдалося надіслати. Перевірте з'єднання.");
+  }finally{
+    btn.disabled = false;
+  }
+}
+
+function startChatPolling(){
+  chatDeadline = Date.now() + CHAT_IDLE_TIMEOUT_MS;
+  chatPollHandle = setInterval(async () => {
+    if(Date.now() > chatDeadline){
+      clearInterval(chatPollHandle);
+      chatPollHandle = null;
+      return;
+    }
+    try{
+      const res = await tg('getUpdates', { offset: chatOffset, timeout: 0 });
+      if(!res.ok || !res.result.length) return;
+      for(const upd of res.result){
+        chatOffset = upd.update_id + 1;
+        const m = upd.message;
+        if(!m || !m.text) continue;
+        if(String(m.chat.id) !== String(ADMIN_CHAT_ID)) continue;
+        const raw = m.text.trim();
+        const prefix = chatCode + ":";
+        if(raw.toLowerCase().startsWith(prefix.toLowerCase())){
+          chatDeadline = Date.now() + CHAT_IDLE_TIMEOUT_MS;
+          const reply = raw.slice(prefix.length).trim();
+          addAdminMsg(reply || "(порожнє повідомлення)");
+          if(!chatOpened || !document.getElementById('chat-panel').classList.contains('open')){
+            document.getElementById('chat-unread').classList.add('show');
+          }
+        }
+      }
+    }catch(e){}
+  }, CHAT_POLL_INTERVAL_MS);
+}
+
+function openSupport(){
+  document.getElementById('support-username').value = "";
+  document.getElementById('support-text').value = "";
+  document.getElementById('support-status').innerHTML = "";
+  document.getElementById('support-send').disabled = false;
+  document.getElementById('support-send').textContent = "Надіслати";
+  document.getElementById('support-overlay').classList.add('show');
+}
+function closeSupport(){ document.getElementById('support-overlay').classList.remove('show'); }
+
+async function submitSupport(){
+  const username = document.getElementById('support-username').value.trim();
+  const problem = document.getElementById('support-text').value.trim();
+  const statusEl = document.getElementById('support-status');
+  if(!username || !problem){
+    statusEl.innerHTML = `<div class="status-msg err">Заповніть обидва поля</div>`;
+    return;
+  }
+  const btn = document.getElementById('support-send');
+  btn.disabled = true;
+  btn.textContent = "Надсилаємо...";
+  const msg = `ЗВЕРНЕННЯ В ПІДТРИМКУ\nTelegram: ${username}\nПроблема: ${problem}`;
+  try{
+    await sendToTelegram(msg);
+    statusEl.innerHTML = `<div class="status-msg ok">Повідомлення надіслано, з вами скоро зв'яжуться.</div>`;
+    btn.textContent = "Надіслано";
+  }catch(e){
+    statusEl.innerHTML = `<div class="status-msg err">Помилка надсилання. Спробуйте пізніше.</div>`;
+    btn.disabled = false;
+    btn.textContent = "Надіслати";
+  }
+}
+
+render();
+</script>
+</body>
+</html>
